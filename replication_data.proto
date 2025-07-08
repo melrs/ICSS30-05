@@ -1,0 +1,54 @@
+syntax = "proto3";
+
+package replicacao;
+
+message DataEntry {
+    int64 epoch = 1;     // Época (versão do líder)
+    int64 offset = 2;    // Offset (número sequencial da entrada no log)
+    string payload = 3;  // Dados a serem replicados (ex: JSON string, binário, etc.)
+}
+
+message WriteRequest {
+    DataEntry entry = 1; // A entrada de dados a ser gravada e replicada
+}
+
+message WriteResponse {
+    bool success = 1;    // Indica se a gravação/replicação foi bem-sucedida
+    string message = 2;  // Mensagem de status ou erro
+}
+
+message Acknowledge {
+    int64 replica_id = 1;  // ID da réplica que enviou o ACK
+    int64 epoch = 2;       // Época do log da réplica
+    int64 offset = 3;      // Offset do log da réplica
+    bool consistent = 4;   // Indica se a réplica está consistente
+}
+
+message CommitRequest {
+    int64 epoch = 1;
+    int64 offset = 2;
+}
+
+message CommitResponse {
+    bool success = 1;
+    string message = 2;
+}
+
+message ReadRequest {
+    // Para simplificar, pode-se ler o último dado, ou buscar por epoch/offset
+    // Exemplo: ler o último dado
+    bool latest = 1;
+}
+
+message ReadResponse {
+    DataEntry entry = 1; // O dado lido
+    bool found = 2;      // Indica se o dado foi encontrado
+    string message = 3;
+}
+
+service ReplicationService {
+    rpc WriteData (WriteRequest) returns (WriteResponse);
+    rpc ReplicateLog (DataEntry) returns (Acknowledge);
+    rpc CommitData (CommitRequest) returns (CommitResponse);
+    rpc ReadData (ReadRequest) returns (ReadResponse);
+}
